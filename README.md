@@ -2,13 +2,19 @@
 
 Este repositorio contiene el código necesario para implementar un sistema de monitoreo en una Raspberry Pi. A continuación, se detallan los pasos para preparar el entorno e instalar las dependencias necesarias.
 
-## 📦 Requisitos Previos
+##  Requisitos Previos
 
 - Raspberry Pi con sistema operativo basado en Debian (Raspberry Pi OS)
 - Python 3 instalado
 
 ##  Instalación del Entorno Virtual
-
+Pra clonar el repositorio necesitamos ubicarno en el Desktop de nuetra rapberry, ejecuta el siguiente comando 
+```
+cd Desktop
+```
+Cuando te ubiques en tu Destop puedes clonar el repositorio con el siguiente comando
+```
+```
 Después de clonar este repositorio, se debe crear un entorno virtual para manejar las dependencias del proyecto de manera aislada.
 
 ### 1. Actualizar el sistema y asegurarse de tener `python3-venv`:
