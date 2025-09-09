@@ -20,6 +20,12 @@ git clone https://github.com/AraceliAG25/Medidor.git
 Te creará una carpeta con el nombre Medidor-main
 cambia el nombre de la carpeta como Medidor
 
+luego ejecuta el sigiente comando en una nueva terminal
+```
+cd Desktop
+cd Medidor
+```
+
 Después de clonar este repositorio, se debe crear un entorno virtual para manejar las dependencias del proyecto de manera aislada.
 
 ### 1. Actualizar el sistema y asegurarse de tener `python3-venv`:
@@ -37,4 +43,12 @@ Ejecuta los siguientes comandos en la terminal para crear y activar el entorno v
 python3 -m venv venv
 source venv/bin/activate
 
+```
+
+## 3️ Instalar las dependencias
+
+Con el entorno virtual activado, instala las dependencias necesarias para el proyecto ejecutando el siguiente comando:
+
+```bash
+pip install -r requirements.txt
 ```
