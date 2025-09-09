@@ -13,15 +13,17 @@ Después de clonar este repositorio, se debe crear un entorno virtual para manej
 
 ### 1. Actualizar el sistema y asegurarse de tener `python3-venv`:
 
-
+```
 sudo apt update
 sudo apt install python3-venv -y
-
+```
 
 ## 2️ Crear y activar el entorno virtual
 
 Ejecuta los siguientes comandos en la terminal para crear y activar el entorno virtual:
 
-
+```
 python3 -m venv venv
 source venv/bin/activate
+
+```
