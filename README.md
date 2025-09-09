@@ -7,6 +7,14 @@ Este repositorio contiene el código necesario para implementar un sistema de mo
 - Raspberry Pi con sistema operativo basado en Debian (Raspberry Pi OS)
 - Python 3 instalado
 
+## Instalar Git en la Raspberry Pi
+
+Antes de clonar el repositorio, asegúrate de tener Git instalado en tu Raspberry Pi. Para ello, ejecuta:
+
+```
+sudo apt update
+sudo apt install git -y
+```
 ##  Instalación del Entorno Virtual
 Pra clonar el repositorio necesitamos ubicarno en el Desktop de nuetra rapberry, ejecuta el siguiente comando 
 ```
