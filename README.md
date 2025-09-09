@@ -25,8 +25,8 @@ Cuando te ubiques en tu Destop puedes clonar el repositorio con el siguiente com
 git clone https://github.com/AraceliAG25/Medidor.git
 ```
 
-Te creará una carpeta con el nombre Medidor-main
-cambia el nombre de la carpeta como Medidor
+Te creará una carpeta con el nombre Medidor
+si en dado caso el nombre es diferente Medidor, cambia el nombre de la carpeta como Medidor
 
 luego ejecuta el sigiente comando en una nueva terminal
 ```
