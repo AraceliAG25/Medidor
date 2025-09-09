@@ -58,6 +58,6 @@ source venv/bin/activate
 Con el entorno virtual activado, instala las dependencias necesarias para el proyecto ejecutando el siguiente comando:
 
 ```bash
-cd Medidor
+cd Dashboard
 pip install -r requirements.txt
 ```
