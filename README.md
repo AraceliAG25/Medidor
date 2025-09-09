@@ -61,3 +61,7 @@ Con el entorno virtual activado, instala las dependencias necesarias para el pro
 cd Dashboard
 pip install -r requirements.txt
 ```
+
+
+rm -rf venv
+
