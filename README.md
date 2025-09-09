@@ -14,7 +14,12 @@ cd Desktop
 ```
 Cuando te ubiques en tu Destop puedes clonar el repositorio con el siguiente comando
 ```
+git clone https://github.com/AraceliAG25/Medidor.git
 ```
+
+Te creará una carpeta con el nombre Medidor-main
+cambia el nombre de la carpeta como Medidor
+
 Después de clonar este repositorio, se debe crear un entorno virtual para manejar las dependencias del proyecto de manera aislada.
 
 ### 1. Actualizar el sistema y asegurarse de tener `python3-venv`:
