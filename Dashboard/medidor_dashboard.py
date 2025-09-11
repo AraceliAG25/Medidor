@@ -268,9 +268,11 @@ section.main > div {
 
 PAGES = {
     "Ventana Principal": "pages.tiempo_real",
-    "Personalizar Gráficas": "pages.personalizar_graficas",
+    "Personalizar Graficas": "pages.personalizar_graficas",
     "Alertas": "pages.alertas_page",
-    "Información": "pages.informacion_page"
+    "Estadisticas": "pages.estadisticas_page",
+    "Informacion": "pages.informacion_page"
+    
 }
 
 if 'heatmap_fig' not in st.session_state:
@@ -454,6 +456,7 @@ def load_consumo_metrics():
     except Exception as e:
         logger.error(f"Error al cargar {CONSUMO_CSV_FILE}: {e}")
     return default_data
+    
 
 def load_alerts_count():
     try:
@@ -552,7 +555,7 @@ def generate_time_series_plot(data_buffer, variable, time_range):
 
 def dashboard():
     st_autorefresh(interval=30000, key="refresh_realtime")  # Cambiado a 30 segundos
-    st.sidebar.title("Navegación")
+    st.sidebar.title("Navegacion")
     selection = st.sidebar.radio("Ir a:", list(PAGES.keys()))
     if selection != "Ventana Principal":
         try:
@@ -611,12 +614,12 @@ def dashboard():
                 """
                 <div class="metrics-column">
                     <div class="metric-card">
-                        <h3>Ciclo de facturación actual:</h3>
+                        <h3>Ciclo de facturacion actual:</h3>
                         <p>{0} hasta {1}</p>
                     </div>
                     <div class="metric-card">
-                        <h3>Dí­as transcurridos en periodo:</h3>
-                        <p>{2} dí­as</p>
+                        <h3>Dias transcurridos en periodo:</h3>
+                        <p>{2} dias</p>
                     </div>
                     <div class="metric-card">
                         <h3>Consumo hoy:</h3>
@@ -672,7 +675,7 @@ def dashboard():
                 """
                 <div class="metrics-column">
                     <div class="metric-card">
-                        <h3>Ciclo de facturacion actual:</h3>
+                        <h3>Ciclo de facturación actual:</h3>
                         <p>Configurar datos de consumo</p>
                     </div>
                     <div class="metric-card">
@@ -722,7 +725,7 @@ def dashboard():
                 """,
                 unsafe_allow_html=True
             )
-        st.info("Configurar datos de consumo en la página Personalizar Gráficas")
+        st.info("Configurar datos de consumo en la pagina Personalizar Graficas")
     col1, col2 = st.columns(2)
     with col1:
         col_select_var, col_select_time = st.columns([2, 1])
@@ -781,7 +784,7 @@ def dashboard():
         if heatmap_fig is not None:
             st.plotly_chart(heatmap_fig, use_container_width=True)
         else:
-            st.error("No se pudo cargar el mapa de calor. Configuralo en la página Personalizar Gráficas.")
+            st.error("No se pudo cargar el mapa de calor. Configuralo en la pagina Personalizar Graficas.")
             logger.error("Mapa de calor no encontrado o archivo heatmap_data.pkl corrupto")
     with col2:
         if st.session_state.historicos_fig is not None:
