@@ -166,7 +166,7 @@ def run():
                 st.markdown('<h2 class="centered-title">Configurar Información</h2>', unsafe_allow_html=True)
                 
                 # Campos del formulario
-                titulo = st.text_input("Tó­tulo", value=data['titulo'] if data['titulo'] != 'No configurado' else '', key="titulo")
+                titulo = st.text_input("Título", value=data['titulo'] if data['titulo'] != 'No configurado' else '', key="titulo")
                 titular = st.text_input("Titular", value=data['titular'] if data['titular'] != 'No configurado' else '', key="titular")
                 direccion = st.text_input("Dirección", value=data['direccion'] if data['direccion'] != 'No configurado' else '', key="direccion")
                 telefono_contacto = st.text_input("Tel. contacto", value=data['telefono_contacto'] if data['telefono_contacto'] != 'No configurado' else '', key="telefono_contacto")

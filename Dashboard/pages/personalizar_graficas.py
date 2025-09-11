@@ -26,7 +26,7 @@ def limpiar_valor(valor):
     try:
         return float(valor)
     except (ValueError, TypeError):
-        logger.warning(f"Valor no numerico: {valor}")
+        logger.warning(f"Valor no númerico: {valor}")
         return None
 
 @st.cache_data(ttl=3600)
@@ -48,11 +48,11 @@ def read_single_txt_file(file_path):
                     continue
                 contenido.append([fecha_dt, valor_limpio])
         if not contenido:
-            logger.warning(f"No se encontraron datos validos en {file_path}")
+            logger.warning(f"No se encontraron datos válidos en {file_path}")
             return pd.DataFrame(columns=['fecha', 'valor'])
         df = pd.DataFrame(contenido, columns=['fecha', 'valor'])
         df = df.sort_values('fecha').dropna().reset_index(drop=True)
-        logger.info(f"Datos leidos de {file_path}: {len(df)} filas")
+        logger.info(f"Datos leídos de {file_path}: {len(df)} filas")
         return df
     except Exception as e:
         logger.error(f"Error leyendo archivo {file_path}: {e}")
@@ -233,7 +233,7 @@ def generate_historical_graph(variable, start_date, end_date, logger):
         logger.info(f"Gráfico histórico generado para {variable} desde {start_date} hasta {end_date}")
         return fig
     except Exception as e:
-        logger.error(f"Error generando grafico historico para {variable}: {e}")
+        logger.error(f"Error generando gráfico histórico para {variable}: {e}")
         return None
 
 
@@ -253,7 +253,7 @@ def listar_fechas_disponibles(variable):
                     date = datetime.strptime(date_dir, '%Y-%m-%d').date()
                     available_dates.append(date)
                 except ValueError:
-                    logger.warning(f"Directorio con formato invalido: {date_dir}")
+                    logger.warning(f"Directorio con formato inválido: {date_dir}")
     if not found_directories:
         logger.warning(f"No se encontraron directorios para {variable}")
     else:
@@ -523,13 +523,13 @@ def run():
         """, unsafe_allow_html=True)
     st.title("Personalizar Gráficas")
     # Seccion para configurar consumo
-    with st.expander("Configurar Consumo de Energí­a"):
+    with st.expander("Configurar Consumo de Energía"):
         consumo_data = load_consumo_data()
         with st.form(key="consumo_form"):
             col1, col2, col3 = st.columns(3)
             with col1:
                 fecha_inicio = st.date_input(
-                    "Fecha de inicio del ciclo de facturacion:",
+                    "Fecha de inicio del ciclo de facturación:",
                     value=datetime.now().date() if consumo_data['fecha_inicio'] == 'No disponible' else pd.to_datetime(consumo_data['fecha_inicio']).date(),
                     key="consumo_fecha_inicio",
                     max_value=datetime.now().date()
@@ -613,7 +613,7 @@ def run():
                 )
             col_submit = st.columns(1)[0]
             with col_submit:
-                generar = st.form_submit_button("Generar Grafico")
+                generar = st.form_submit_button("Generar Gráfico")
             if generar:
                 if fecha_inicio > fecha_fin:
                     st.error("La fecha inicial no puede ser mayor que la fecha final.")

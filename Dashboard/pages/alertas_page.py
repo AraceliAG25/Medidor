@@ -41,7 +41,7 @@ PER_VARIABLE_NAME = {
     'Disco_Uso': 'Uso de Disco',
     'Disco_Libre': 'Espacio Libre en Disco',
     'Temperatura': 'Temperatura',
-    'Internet': 'Conexion a Internet',
+    'Internet': 'Conexión a Internet',
     'Sistema': 'Sistema'
 }
 
@@ -329,7 +329,7 @@ def run():
         if st.button("Borrar Todas las Alertas"):
             delete_all_alerts()
             st.rerun()
-        if st.button("Configuración de parametros"):
+        if st.button("Configuración de parámetros"):
             st.session_state.show_config_parametros = not st.session_state.get('show_config_parametros', False)
             st.session_state.show_config_avanzada = False
             logger.debug(f"Estado de show_config_parametros cambiado a: {st.session_state.get('show_config_parametros')}")

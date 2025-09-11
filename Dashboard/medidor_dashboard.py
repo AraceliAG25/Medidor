@@ -268,10 +268,10 @@ section.main > div {
 
 PAGES = {
     "Ventana Principal": "pages.tiempo_real",
-    "Personalizar Graficas": "pages.personalizar_graficas",
+    "Personalizar Gráficas": "pages.personalizar_graficas",
     "Alertas": "pages.alertas_page",
-    "Estadisticas": "pages.estadisticas_page",
-    "Informacion": "pages.informacion_page"
+    "Estadísticas": "pages.estadisticas_page",
+    "Información": "pages.informacion_page"
     
 }
 
@@ -555,7 +555,7 @@ def generate_time_series_plot(data_buffer, variable, time_range):
 
 def dashboard():
     st_autorefresh(interval=30000, key="refresh_realtime")  # Cambiado a 30 segundos
-    st.sidebar.title("Navegacion")
+    st.sidebar.title("Navegación")
     selection = st.sidebar.radio("Ir a:", list(PAGES.keys()))
     if selection != "Ventana Principal":
         try:
@@ -563,8 +563,8 @@ def dashboard():
             page_module.run()
             st.stop()
         except Exception as e:
-            logger.error(f"Error cargando pagina {selection}: {e}")
-            st.error(f"Error cargando pagina: {e}")
+            logger.error(f"Error cargando página {selection}: {e}")
+            st.error(f"Error cargando página: {e}")
             st.stop()
     consumo_data = load_consumo_metrics()
     if st.session_state.historicos_fig is None:
@@ -618,7 +618,7 @@ def dashboard():
                         <p>{0} hasta {1}</p>
                     </div>
                     <div class="metric-card">
-                        <h3>Dias transcurridos en periodo:</h3>
+                        <h3>Días transcurridos en periodo:</h3>
                         <p>{2} dias</p>
                     </div>
                     <div class="metric-card">
@@ -645,7 +645,7 @@ def dashboard():
                 """
                 <div class="metrics-column">
                     <div class="metric-card">
-                        <h3>Demanda maxima en periodo:</h3>
+                        <h3>Demanda máxima en periodo:</h3>
                         <p>{0:.2f} kW</p>
                     </div>
                     <div class="metric-card">
@@ -657,7 +657,7 @@ def dashboard():
                         <p>${2:.2f} MXN</p>
                     </div>
                     <div class="metric-card">
-                        <h3>Estimación proxima factura:</h3>
+                        <h3>Estimación próxima factura:</h3>
                         <p>${3:.2f} MXN</p>
                     </div>
                 </div>
@@ -718,7 +718,7 @@ def dashboard():
                         <p>Configurar datos de consumo</p>
                     </div>
                     <div class="metric-card">
-                        <h3>Estimación proxima factura:</h3>
+                        <h3>Estimación próxima factura:</h3>
                         <p>Configurar datos de consumo</p>
                     </div>
                 </div>
