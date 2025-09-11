@@ -547,7 +547,7 @@ def generate_time_series_plot(data_buffer, variable, time_range):
             paper_bgcolor="#000000",
             height=200
         )
-        logger.info(f"Grafica generada para {variable} en rango {time_range}")
+        logger.info(f"Gráfica generada para {variable} en rango {time_range}")
         return fig
     except Exception as e:
         logger.error(f"Error generando grafica para {variable}: {e}")
@@ -619,7 +619,7 @@ def dashboard():
                     </div>
                     <div class="metric-card">
                         <h3>Días transcurridos en periodo:</h3>
-                        <p>{2} dias</p>
+                        <p>{2} días</p>
                     </div>
                     <div class="metric-card">
                         <h3>Consumo hoy:</h3>
@@ -679,7 +679,7 @@ def dashboard():
                         <p>Configurar datos de consumo</p>
                     </div>
                     <div class="metric-card">
-                        <h3>Dias transcurridos en periodo:</h3>
+                        <h3>Días transcurridos en periodo:</h3>
                         <p>Configurar datos de consumo</p>
                     </div>
                     <div class="metric-card">
