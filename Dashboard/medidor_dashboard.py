@@ -614,7 +614,7 @@ def dashboard():
                 """
                 <div class="metrics-column">
                     <div class="metric-card">
-                        <h3>Ciclo de facturacion actual:</h3>
+                        <h3>Ciclo de facturación actual:</h3>
                         <p>{0} hasta {1}</p>
                     </div>
                     <div class="metric-card">
@@ -645,7 +645,7 @@ def dashboard():
                 """
                 <div class="metrics-column">
                     <div class="metric-card">
-                        <h3>Demanda máxima en periodo:</h3>
+                        <h3>Demanda maxima en periodo:</h3>
                         <p>{0:.2f} kW</p>
                     </div>
                     <div class="metric-card">
@@ -718,7 +718,7 @@ def dashboard():
                         <p>Configurar datos de consumo</p>
                     </div>
                     <div class="metric-card">
-                        <h3>Estimacion proxima factura:</h3>
+                        <h3>Estimación proxima factura:</h3>
                         <p>Configurar datos de consumo</p>
                     </div>
                 </div>
