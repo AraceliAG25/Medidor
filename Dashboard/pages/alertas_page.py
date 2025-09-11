@@ -56,10 +56,10 @@ def load_alerts_config():
     try:
         with open(ALERTS_CONFIG_HOME, 'r') as f:
             config = json.load(f)
-        logger.debug(f"ConfiguraciÃ³n de alertas cargada: {config}")
+        logger.debug(f"Configuración de alertas cargada: {config}")
         return config
     except Exception as e:
-        logger.error(f"Error cargando configuraciÃ³n de alertas: {e}", exc_info=True)
+        logger.error(f"Error cargando configuración de alertas: {e}", exc_info=True)
         return {var: {"min": None, "max": None} for var in CONFIG_VARIABLES}
 
 def save_alerts_config(config):
@@ -69,11 +69,11 @@ def save_alerts_config(config):
             json.dump(config, f, indent=4)
         os.replace(temp_file, ALERTS_CONFIG_HOME)
         os.chmod(ALERTS_CONFIG_HOME, 0o664)
-        logger.info(f"ConfiguraciÃ³n de alertas guardada en {ALERTS_CONFIG_HOME}: {config}")
-        st.success("ConfiguraciÃ³n de alertas guardada correctamente")
+        logger.info(f"Configuración de alertas guardada en {ALERTS_CONFIG_HOME}: {config}")
+        st.success("Configuración de alertas guardada correctamente")
     except Exception as e:
-        logger.error(f"Error guardando configuraciÃ³n de alertas: {e}", exc_info=True)
-        st.error(f"Error guardando configuraciÃ³n de alertas: {e}")
+        logger.error(f"Error guardando configuración de alertas: {e}", exc_info=True)
+        st.error(f"Error guardando configuración de alertas: {e}")
 
 def load_alerts_storage():
     try:
@@ -114,8 +114,8 @@ def delete_alert(index):
         logger.info(f"Alerta en indice {index} eliminada")
         st.success(f"Alerta eliminada correctamente")
     else:
-        logger.error(f"Ãndice de alerta {index} no valido")
-        st.error("Error: Ãndice de alerta no vÃ¡lido")
+        logger.error(f"Índice de alerta {index} no valido")
+        st.error("Error: Índice de alerta no válido")
 
 def delete_all_alerts():
     try:
@@ -275,7 +275,7 @@ def run():
     with st.container():
         col1, col2, col3, col4, col5 = st.columns([3, 1, 1, 1, 1])
         with col1:
-            st.markdown('<div class="header-container"><p>DescripciÃ³n</p></div>', unsafe_allow_html=True)
+            st.markdown('<div class="header-container"><p>Descripción</p></div>', unsafe_allow_html=True)
         with col2:
             st.markdown('<div class="header-container"><p>Valor</p></div>', unsafe_allow_html=True)
         with col3:
@@ -329,11 +329,11 @@ def run():
         if st.button("Borrar Todas las Alertas"):
             delete_all_alerts()
             st.rerun()
-        if st.button("ConfiguraciÃ³n de parametros"):
+        if st.button("Configuración de parametros"):
             st.session_state.show_config_parametros = not st.session_state.get('show_config_parametros', False)
             st.session_state.show_config_avanzada = False
             logger.debug(f"Estado de show_config_parametros cambiado a: {st.session_state.get('show_config_parametros')}")
-        if st.button("ConfiguraciÃ³n avanzada"):
+        if st.button("Configuración avanzada"):
             st.session_state.show_config_avanzada = not st.session_state.get('show_config_avanzada', False)
             st.session_state.show_config_parametros = False
             logger.debug(f"Estado de show_config_avanzada cambiado a: {st.session_state.get('show_config_avanzada')}")
@@ -346,7 +346,7 @@ def run():
 
     if st.session_state.show_config_parametros:
         st.markdown('<div class="config-section">', unsafe_allow_html=True)
-        st.markdown('<h2 class="centered-title">ConfiguraciÃ³n de parametros</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="centered-title">Configuración de parametros</h2>', unsafe_allow_html=True)
         config = load_alerts_config()
         for variable in CONFIG_PARAMETROS:
             st.subheader(f"{PER_VARIABLE_NAME[variable]} ({UNITS_PER_VARIABLE.get(variable, '')})")
@@ -371,17 +371,17 @@ def run():
         
         with st.container():
             st.markdown('<div class="main-button">', unsafe_allow_html=True)
-            if st.button("Guardar ConfiguraciÃ³n", key="save_config_parametros"):
+            if st.button("Guardar Configuración", key="save_config_parametros"):
                 save_alerts_config(config)
                 st.session_state.show_config_parametros = False
                 st.rerun()
-                logger.info("ConfiguraciÃ³n de parametros guardada y seccion ocultada")
+                logger.info("Configuración de parametros guardada y seccion ocultada")
             st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     if st.session_state.show_config_avanzada:
         st.markdown('<div class="config-section">', unsafe_allow_html=True)
-        st.markdown('<h2 class="centered-title">ConfiguraciÃ³n preestablecida de acuerdo a normativa de Codigo de Red</h2>', unsafe_allow_html=True)
+        st.markdown('<h2 class="centered-title">Configuración preestablecida de acuerdo a normativa de Codigo de Red</h2>', unsafe_allow_html=True)
         config = load_alerts_config()
         for variable in CONFIG_AVANZADA:
             st.subheader(f"{PER_VARIABLE_NAME[variable]} ({UNITS_PER_VARIABLE.get(variable, '')})")
@@ -406,11 +406,11 @@ def run():
         
         with st.container():
             st.markdown('<div class="main-button">', unsafe_allow_html=True)
-            if st.button("Guardar ConfiguraciÃ³n", key="save_config_avanzada"):
+            if st.button("Guardar Configuración", key="save_config_avanzada"):
                 save_alerts_config(config)
                 st.session_state.show_config_avanzada = False
                 st.rerun()
-                logger.info("ConfiguraciÃ³n avanzada guardada y seccion ocultada")
+                logger.info("Configuración avanzada guardada y seccion ocultada")
             st.markdown('</div>', unsafe_allow_html=True)
         st.markdown('</div>', unsafe_allow_html=True)
 

@@ -126,7 +126,7 @@ def load_consumo_data():
                     if key not in data:
                         data[key] = default_data[key]
                         logger.warning(f"Clave {key} no encontrada en {CONSUMO_CONFIG_FILE}, usando valor por defecto: {default_data[key]}")
-                logger.info(f"ConfiguraciÃ³n de consumo cargada desde {CONSUMO_CONFIG_FILE}")
+                logger.info(f"Configuración de consumo cargada desde {CONSUMO_CONFIG_FILE}")
                 return data
     except Exception as e:
         logger.error(f"Error al cargar {CONSUMO_CONFIG_FILE}: {e}")
@@ -230,7 +230,7 @@ def generate_historical_graph(variable, start_date, end_date, logger):
             line=dict(width=1, color='yellow'),
             fillcolor='rgba(255, 255, 0, 0.2)'
         )
-        logger.info(f"GrÃ¡fico histÃ³rico generado para {variable} desde {start_date} hasta {end_date}")
+        logger.info(f"Gráfico histórico generado para {variable} desde {start_date} hasta {end_date}")
         return fig
     except Exception as e:
         logger.error(f"Error generando grafico historico para {variable}: {e}")
@@ -362,7 +362,7 @@ def leer_archivos_txt_por_variable(variable, fecha_inicio=None, fecha_fin=None, 
         return pd.DataFrame(columns=['fecha', 'valor'])
     df = pd.concat(contenido_completo, ignore_index=True)
     df = df.sort_values('fecha').dropna().reset_index(drop=True)
-    logger.info(f"Datos leÃ­dos para {variable}: {len(df)} filas")
+    logger.info(f"Datos leí­dos para {variable}: {len(df)} filas")
     return df
 
 def generate_heatmap(variable, fecha_final, manual_config=False):
@@ -419,7 +419,7 @@ def generate_heatmap(variable, fecha_final, manual_config=False):
             zmax = 135
             valid_data = valid_data[(valid_data >= 105) & (valid_data <= 135)]
             if valid_data.size == 0:
-                logger.error("No hay valores validos para Voltaje_fase_1 en el rango 105-135 V")
+                logger.error("No hay valores válidos para Voltaje_fase_1 en el rango 105-135 V")
                 st.error("No hay valores validos para Voltaje_fase_1 en el rango 105-135 V.")
                 return None
         elif variable == 'frecuencia':
@@ -427,8 +427,8 @@ def generate_heatmap(variable, fecha_final, manual_config=False):
             zmax = 61
             valid_data = valid_data[(valid_data >= 59) & (valid_data <= 61)]
             if valid_data.size == 0:
-                logger.error("No hay valores validos para frecuencia en el rango 59-61 Hz")
-                st.error("No hay valores validos para frecuencia en el rango 59-61 Hz.")
+                logger.error("No hay valores válidos para frecuencia en el rango 59-61 Hz")
+                st.error("No hay valores válidos para frecuencia en el rango 59-61 Hz.")
                 return None
         else:
             zmin = 0
@@ -521,9 +521,9 @@ def run():
         }
         </style>
         """, unsafe_allow_html=True)
-    st.title("Personalizar GrÃ¡ficas")
+    st.title("Personalizar Gráficas")
     # Seccion para configurar consumo
-    with st.expander("Configurar Consumo de EnergÃ­a"):
+    with st.expander("Configurar Consumo de Energí­a"):
         consumo_data = load_consumo_data()
         with st.form(key="consumo_form"):
             col1, col2, col3 = st.columns(3)
@@ -544,22 +544,22 @@ def run():
                 )
             with col3:
                 energia_inicial = st.number_input(
-                    "EnergÃ­a inicial (kWh):",
+                    "Energí­a inicial (kWh):",
                     min_value=0.0,
                     step=0.1,
                     value=consumo_data['energia_inicial'],
                     key="consumo_energia_inicial"
                 )
                 usar_valor_energia = st.checkbox(
-                    "Utilizar valor de la energÃ­a",
+                    "Utilizar valor de la energí­a",
                     value=consumo_data['usar_valor_energia'],
                     key="usar_valor_energia"
                 )
             col_submit = st.columns(1)[0]
             with col_submit:
-                guardar = st.form_submit_button("Guardar ConfiguraciÃ³n")
+                guardar = st.form_submit_button("Guardar Configuración")
             if guardar:
-                with st.spinner("Guardando configuraciÃ³n..."):
+                with st.spinner("Guardando configuración..."):
                     consumo = calcular_consumo_inicial(fecha_inicio.strftime('%Y-%m-%d'), energia_inicial, usar_valor_energia)
                     if consumo is None:
                         return
@@ -585,10 +585,10 @@ def run():
                     )
                     if consumo_data:
                         st.session_state.consumo_data = consumo_data
-                        st.success("ConfiguraciÃ³n de consumo guardada exitÃ³samente.")
-                        logger.info("ConfiguraciÃ³n de consumo guardada por el usuario")
+                        st.success("Configuración de consumo guardada exitósamente.")
+                        logger.info("Configuración de consumo guardada por el usuario")
     # Seccion para configurar graficos historicos
-    with st.expander("Configurar GrÃ¡ficos HistÃ³ricos"):
+    with st.expander("Configurar Gráficos Históricos"):
         with st.form(key="historicos_form"):
             col_var, col_fecha_inicio, col_fecha_fin = st.columns(3)
             with col_var:
@@ -619,7 +619,7 @@ def run():
                     st.error("La fecha inicial no puede ser mayor que la fecha final.")
                     logger.error("Fecha inicial mayor que fecha final")
                     return
-                with st.spinner("Generando grÃ¡fico histÃ³rico..."):
+                with st.spinner("Generando gráfico histórico..."):
                     fig = generate_historical_graph(
                         variable,
                         datetime.combine(fecha_inicio, datetime.min.time()),
@@ -628,10 +628,10 @@ def run():
                     )
                     if fig:
                         st.session_state.historicos_fig = fig
-                        st.success("GrÃ¡fico histÃ³rico generado. Ver el resultado en el panel principal.")
+                        st.success("Gráfico histórico generado. Ver el resultado en el panel principal.")
                     else:
-                        st.error("No se pudieron cargar los datos para el grÃ¡fico histÃ³rico.")
-                        logger.error("No se encontraron datos para el grÃ¡fico histÃ³rico")
+                        st.error("No se pudieron cargar los datos para el gráfico histórico.")
+                        logger.error("No se encontraron datos para el gráfico histórico")
     # Seccion para configurar mapa de calor
     with st.expander("Configurar Mapa de Calor"):
         config = load_heatmap_config()

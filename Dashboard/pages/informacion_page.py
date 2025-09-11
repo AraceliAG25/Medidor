@@ -38,7 +38,7 @@ def load_informacion():
                 for key in default_data:
                     if key not in data or pd.isna(data[key]):
                         data[key] = default_data[key]
-                logger.debug(f"Datos de informaciÃ³n cargados: {data}")
+                logger.debug(f"Datos de información cargados: {data}")
                 return data
         logger.warning(f"No existe {INFORMACION_CSV_FILE}, retornando valores por defecto")
         return default_data
@@ -59,15 +59,15 @@ def save_informacion(data):
         import pwd
         user_info = pwd.getpwnam(user)
         os.chown(INFORMACION_CSV_FILE, user_info.pw_uid, user_info.pw_gid)
-        logger.info(f"Datos de informaciÃ³n guardados en {INFORMACION_CSV_FILE}: {data}")
-        st.toast("ConfiguraciÃ³n de informaciÃ³n guardada correctamente")
+        logger.info(f"Datos de información guardados en {INFORMACION_CSV_FILE}: {data}")
+        st.toast("Configuración de información guardada correctamente")
 
     except Exception as e:
         logger.error(f"Error guardando {INFORMACION_CSV_FILE}: {e}", exc_info=True)
         st.error(f"Error guardando configuracion: {e}")
 
 def run():
-    st.title("InformaciÃ³n")
+    st.title("Información")
 
     # Estilos CSS coherentes con el dashboard
     st.markdown("""
@@ -140,7 +140,7 @@ def run():
             #st.markdown('<div class="info-container">', unsafe_allow_html=True)
             st.markdown(f"<p><b>Tí­tulo:</b> {data['titulo']}</p>", unsafe_allow_html=True)
             st.markdown(f"<p><b>Titular:</b> {data['titular']}</p>", unsafe_allow_html=True)
-            st.markdown(f"<p><b>DirecciÃ³n:</b> {data['direccion']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p><b>Dirección:</b> {data['direccion']}</p>", unsafe_allow_html=True)
             st.markdown(f"<p><b>Tel. contacto:</b> {data['telefono_contacto']}</p>", unsafe_allow_html=True)
             st.markdown(f"<p><b>No. de servicio:</b> {data['no_servicio']}</p>", unsafe_allow_html=True)
             st.markdown(f"<p><b>Tarifa CFE:</b> {data['tarifa_cfe']}</p>", unsafe_allow_html=True)
@@ -163,12 +163,12 @@ def run():
 
             # Mostrar el formulario si el boton fue presionado
             if st.session_state.show_config_informacion:
-                st.markdown('<h2 class="centered-title">Configurar InformaciÃ³n</h2>', unsafe_allow_html=True)
+                st.markdown('<h2 class="centered-title">Configurar Información</h2>', unsafe_allow_html=True)
                 
                 # Campos del formulario
-                titulo = st.text_input("TÃ­tulo", value=data['titulo'] if data['titulo'] != 'No configurado' else '', key="titulo")
+                titulo = st.text_input("Tó­tulo", value=data['titulo'] if data['titulo'] != 'No configurado' else '', key="titulo")
                 titular = st.text_input("Titular", value=data['titular'] if data['titular'] != 'No configurado' else '', key="titular")
-                direccion = st.text_input("DirecciÃ³n", value=data['direccion'] if data['direccion'] != 'No configurado' else '', key="direccion")
+                direccion = st.text_input("Dirección", value=data['direccion'] if data['direccion'] != 'No configurado' else '', key="direccion")
                 telefono_contacto = st.text_input("Tel. contacto", value=data['telefono_contacto'] if data['telefono_contacto'] != 'No configurado' else '', key="telefono_contacto")
                 no_servicio = st.text_input("No. de servicio", value=data['no_servicio'] if data['no_servicio'] != 'No configurado' else '', key="no_servicio")
                 tarifa_cfe = st.text_input("Tarifa CFE", value=data['tarifa_cfe'] if data['tarifa_cfe'] != 'No configurado' else '', key="tarifa_cfe")
@@ -178,7 +178,7 @@ def run():
 
                 # Boton de guardar dentro del div
                 st.markdown('<div class="main-button">', unsafe_allow_html=True)
-                if st.button("Guardar ConfiguraciÃn", key="save_informacion"):
+                if st.button("Guardar Configuración", key="save_informacion"):
                     new_data = {
                         'titulo': titulo if titulo else 'No configurado',
                         'titular': titular if titular else 'No configurado',
@@ -193,7 +193,7 @@ def run():
                     save_informacion(new_data)
                     st.session_state.show_config_informacion = False
                     st.rerun()
-                    logger.info("Configuracion de informacion guardada y seccion ocultada")
+                    logger.info("Configuración de informacion guardada y seccion ocultada")
 
 if __name__ == "__main__":
     run()
