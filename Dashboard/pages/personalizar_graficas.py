@@ -230,10 +230,10 @@ def generate_historical_graph(variable, start_date, end_date, logger):
             line=dict(width=1, color='yellow'),
             fillcolor='rgba(255, 255, 0, 0.2)'
         )
-        logger.info(f"Gráfico histórico generado para {variable} desde {start_date} hasta {end_date}")
+        logger.info(f"Grafico historico generado para {variable} desde {start_date} hasta {end_date}")
         return fig
     except Exception as e:
-        logger.error(f"Error generando gráfico histórico para {variable}: {e}")
+        logger.error(f"Error generando grafico historico para {variable}: {e}")
         return None
 
 

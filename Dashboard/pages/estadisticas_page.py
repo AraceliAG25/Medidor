@@ -2,9 +2,8 @@
 """
 estadisticas_page.py
 --------------------
-Purpose: Streamlit page for the dashboard to select variables and dates,
-trigger processing in a separate script, and display results from the latest Excel file.
-Variables are obtained from data_collector.py.
+Proposito: Pagina de Streamlit para seleccionar variables y fechas, iniciar el procesamiento estadistico,
+y mostrar los resultados del archivo Excel mas reciente.
 """
 
 import streamlit as st
@@ -14,8 +13,9 @@ import subprocess
 import logging
 import re
 import glob
-import time
+import pickle
 from datetime import datetime, timedelta
+from streamlit_autorefresh import st_autorefresh
 from data_collector import VARIABLES, VARIABLES_DISPLAY
 from config import BASE_DIR, LOG_DIR, STATISTICS_CONFIG_FILE, STATISTICS_OUTPUT_DIR
 
@@ -29,7 +29,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def save_statistics_config(variables, start_date, end_date, decimation_factor):
-    """Save the statistics configuration to a pickle file."""
+    """Guarda la configuracion de estadisticas en un archivo pickle."""
     try:
         os.makedirs(os.path.dirname(STATISTICS_CONFIG_FILE), exist_ok=True)
         data = {
@@ -37,127 +37,145 @@ def save_statistics_config(variables, start_date, end_date, decimation_factor):
             'start_date': start_date,
             'end_date': end_date,
             'decimation_factor': decimation_factor,
-            'last_request_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
             'processing': True,
             'error': None,
-            'request_id': str(time.time())  # Unique ID for each request
+            'timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         }
         with open(STATISTICS_CONFIG_FILE, 'wb') as f:
-            import pickle
             pickle.dump(data, f)
         os.chmod(STATISTICS_CONFIG_FILE, 0o664)
-        logger.info(f"Statistics configuration saved to {STATISTICS_CONFIG_FILE}: {data}")
+        logger.info(f"Configuracion guardada en {STATISTICS_CONFIG_FILE}: {data}")
     except Exception as e:
-        logger.error(f"Error saving statistics config to {STATISTICS_CONFIG_FILE}: {e}", exc_info=True)
+        logger.error(f"Error al guardar configuracion: {e}", exc_info=True)
         raise
 
-def load_statistics_config():
-    """Load the statistics configuration from a pickle file."""
-    try:
-        if os.path.exists(STATISTICS_CONFIG_FILE):
-            with open(STATISTICS_CONFIG_FILE, 'rb') as f:
-                import pickle
-                data = pickle.load(f)
-                logger.info(f"Statistics configuration loaded from {STATISTICS_CONFIG_FILE}: {data}")
-                return data
-        return {'processing': False, 'error': None, 'request_id': None}
-    except Exception as e:
-        logger.error(f"Error loading statistics config from {STATISTICS_CONFIG_FILE}: {e}", exc_info=True)
-        return {'processing': False, 'error': None, 'request_id': None}
-
-def get_latest_excel_file(request_id):
-    """Get the most recent statistics_results_*.xlsx file."""
+def get_latest_excel_file():
+    """Obtiene el archivo statistics_results_*.xlsx mas reciente."""
     try:
         os.makedirs(STATISTICS_OUTPUT_DIR, exist_ok=True)
         excel_files = glob.glob(os.path.join(STATISTICS_OUTPUT_DIR, "statistics_results_*.xlsx"))
         if not excel_files:
-            logger.warning(f"No Excel files found in {STATISTICS_OUTPUT_DIR}")
+            logger.debug(f"No se encontraron archivos Excel en {STATISTICS_OUTPUT_DIR}")
             return None
         latest_file = max(excel_files, key=os.path.getctime)
-        # Verify if the file is recent enough for the current request
-        file_time = datetime.fromtimestamp(os.path.getctime(latest_file))
-        request_time = datetime.now() if not request_id else datetime.fromtimestamp(float(request_id))
-        if file_time < request_time - timedelta(minutes=5):
-            logger.warning(f"Latest Excel file {latest_file} is too old for request_id {request_id}")
-            return None
-        logger.info(f"Latest Excel file found: {latest_file}")
+        logger.info(f"Archivo Excel mas reciente: {latest_file}")
         return latest_file
     except Exception as e:
-        logger.error(f"Error finding latest Excel file: {e}", exc_info=True)
+        logger.error(f"Error al buscar archivo Excel: {e}", exc_info=True)
         return None
 
+def load_results_from_excel():
+    """Carga los resultados estadisticos desde el archivo Excel mas reciente."""
+    try:
+        latest_excel = get_latest_excel_file()
+        if not latest_excel or not os.path.exists(latest_excel):
+            logger.debug(f"No hay archivo Excel disponible: {latest_excel}")
+            return {}
+        df = pd.read_excel(latest_excel)
+        results = {}
+        for _, row in df.iterrows():
+            variable = row['Variable']
+            stats = {k: v for k, v in row.items() if k != 'Variable'}
+            results[variable] = stats
+        logger.info(f"Resultados cargados desde {latest_excel}")
+        return results
+    except Exception as e:
+        logger.error(f"Error al cargar resultados: {e}", exc_info=True)
+        return {}
+
+def load_statistics_config():
+    """Carga la configuracion de estadisticas desde un archivo pickle."""
+    try:
+        if os.path.exists(STATISTICS_CONFIG_FILE):
+            with open(STATISTICS_CONFIG_FILE, 'rb') as f:
+                data = pickle.load(f)
+                logger.debug(f"Configuracion cargada: {data}")
+                return data
+        return {'processing': False, 'error': None, 'timestamp': None}
+    except Exception as e:
+        logger.error(f"Error al cargar configuracion: {e}", exc_info=True)
+        return {'processing': False, 'error': None, 'timestamp': None}
+
 def get_available_variables(main_folder):
-    """Get available variables from data_collector.py and verify folder existence."""
+    """Obtiene las variables disponibles verificando las carpetas de datos."""
     try:
         if not os.path.exists(main_folder):
-            logger.error(f"Base directory does not exist: {main_folder}")
+            logger.error(f"Directorio no existe: {main_folder}")
             return []
-        
         variables = []
         date_folders = [f for f in os.listdir(main_folder) if re.match(r'\d{4}-\d{2}-\d{2}', f)]
-        logger.info(f"Date folders found in {main_folder}: {date_folders}")
-        
         if not date_folders:
-            logger.error(f"No date folders (YYYY-MM-DD) found in {main_folder}")
+            logger.error(f"No se encontraron carpetas de fechas en {main_folder}")
             return []
-        
         for var in VARIABLES:
             var_lower = var.lower()
-            found = False
             for date_folder in date_folders:
                 base_date_path = os.path.join(main_folder, date_folder)
                 for folder in os.listdir(base_date_path):
                     if folder.lower() == var_lower:
                         var_folder = os.path.join(base_date_path, folder)
                         if not os.access(var_folder, os.R_OK):
-                            logger.warning(f"No read permissions for folder: {var_folder}")
+                            logger.warning(f"Sin permisos de lectura: {var_folder}")
                             continue
                         txt_files = [f for f in os.listdir(var_folder) if f.endswith('.txt')]
                         if txt_files:
                             variables.append(var)
-                            logger.debug(f"Found valid variable: {var}, folder: {var_folder}, files: {txt_files}")
-                            found = True
                             break
-                if found:
-                    break
-            if not found:
-                logger.warning(f"No data found for variable: {var} in any date folder")
-        
         variables = sorted(list(set(variables)))
-        if not variables:
-            logger.error("No valid variables found in data folder")
-        else:
-            logger.info(f"Available variables: {variables}")
+        logger.info(f"Variables disponibles: {variables}")
         return variables
     except Exception as e:
-        logger.error(f"Error scanning variables: {e}", exc_info=True)
+        logger.error(f"Error al obtener variables: {e}", exc_info=True)
         return []
+        
 
-def load_results_from_excel(request_id):
-    """Load statistical results from the latest Excel file."""
+def check_data_availability(variables, start_date, end_date):
+    """Verifica si existen datos para las variables y fechas especificadas."""
     try:
-        latest_excel = get_latest_excel_file(request_id)
-        if not latest_excel:
-            logger.warning("No valid Excel file available to load results")
-            return {}
-        if os.path.exists(latest_excel):
-            df = pd.read_excel(latest_excel)
-            results = {}
-            for _, row in df.iterrows():
-                variable = row['Variable']
-                stats = {k: v for k, v in row.items() if k != 'Variable'}
-                results[variable] = stats
-            logger.info(f"Loaded results from {latest_excel}")
-            return results
-        logger.warning(f"Excel file not found: {latest_excel}")
-        return {}
+        start_date_dt = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date_dt = datetime.strptime(end_date, '%Y-%m-%d')
+        dates = pd.date_range(start=start_date_dt, end=end_date_dt, freq='D')
+        variables_list = variables.split(',')
+        found_data = False
+        missing_vars = []
+        for variable in variables_list:
+            variable_lower = variable.lower()
+            var_found = False
+            for date in dates:
+                date_str = date.strftime('%Y-%m-%d')
+                base_date_path = os.path.join(BASE_DIR, date_str)
+                if os.path.exists(base_date_path):
+                    for folder in os.listdir(base_date_path):
+                        if folder.lower() == variable_lower:
+                            date_folder = os.path.join(base_date_path, folder)
+                            txt_files = [f for f in os.listdir(date_folder) if f.endswith('.txt')]
+                            if txt_files:
+                                logger.debug(f"Datos encontrados para {variable} en {date_str}: {txt_files[:5]}")
+                                var_found = True
+                                found_data = True
+                                break
+                    if var_found:
+                        break
+            if not var_found:
+                missing_vars.append(variable)
+        if not found_data:
+            error_msg = f"No se encontraron datos para {variables} en {start_date} a {end_date}. Variables sin datos: {missing_vars}. Directorio: {BASE_DIR}"
+            logger.warning(error_msg)
+            return False
+        if missing_vars:
+            logger.warning(f"Algunas variables sin datos: {missing_vars}")
+        logger.info(f"Datos disponibles para al menos una variable en {variables}")
+        return True
     except Exception as e:
-        logger.error(f"Error loading results from Excel: {e}", exc_info=True)
-        return {}
+        logger.error(f"Error al verificar datos: {e}", exc_info=True)
+        return False
 
 def main():
-    """Main function for the Estadisticas page."""
-    # CSS styles consistent with medidor_dashboard.py
+    """Funcion principal para la pagina de Estadisticas."""
+    # Actualizar cada 10 segundos para reflejar resultados o errores
+    st_autorefresh(interval=10000, key="refresh_estadisticas")
+
+    # Estilos CSS
     st.markdown("""
     <style>
     .main-button > button {
@@ -176,16 +194,10 @@ def main():
     .stNumberInput > div > div > input {
         background-color: #444444 !important;
         color: white !important;
-        border-radius: 5px;
+        border-radius: 5px.
     }
     .stCheckbox > label {
         color: white !important;
-    }
-    .centered-title {
-        text-align: center;
-        color: white;
-        font-size: 24px;
-        margin-bottom: 20px;
     }
     .results-container {
         background-color: #2a2a2a;
@@ -199,34 +211,40 @@ def main():
 
     st.title("Estadisticas")
 
-    # Get available variables
+    # Verificar errores en la configuracion
+    config = load_statistics_config()
+    if config.get('error'):
+        st.error(f"Error en el procesamiento anterior ({config.get('timestamp', 'desconocido')}): {config['error']}")
+    if config.get('processing', False):
+        st.info(f"Procesamiento en curso iniciado en {config.get('timestamp', 'desconocido')}. Espera a que finalice.")
+
+    # Obtener variables disponibles
     variables = get_available_variables(BASE_DIR)
     if not variables:
-        st.error("No se encontraron variables validas en la carpeta de datos. Asegurate de que existan datos en /home/pi/Desktop/Medidor/Rasp_Greco/YYYY-MM-DD/variable/. Verifica que data_collector.py este ejecutandose y generando datos.")
-        logger.error("No valid variables found in the data folder")
+        st.error("No se encontraron variables validas. Asegura que existan datos en /home/pi/Desktop/Medidor/Rasp_Greco/YYYY-MM-DD/variable/.")
         return
 
-    # Initialize session state
+    # Validar que las variables seleccionadas previamente sean validas
     if 'selected_variables' not in st.session_state:
-        st.session_state.selected_variables = [variables[0] if variables else None]
-    if 'show_results' not in st.session_state:
-        st.session_state.show_results = False
-    if 'processing' not in st.session_state:
-        st.session_state.processing = False
-    if 'last_request_id' not in st.session_state:
-        st.session_state.last_request_id = None
+        st.session_state.selected_variables = [variables[0]]
+    else:
+        st.session_state.selected_variables = [
+            var for var in st.session_state.selected_variables if var in variables
+        ]
+        if not st.session_state.selected_variables:
+            st.session_state.selected_variables = [variables[0]]
 
-    # Variable selection
+    # Seleccion de variables
     for i, var in enumerate(st.session_state.selected_variables):
         st.session_state.selected_variables[i] = st.selectbox(
-            f"Selecciona una variable {i + 1}",
+            f"Selecciona variable {i + 1}",
             variables,
             index=variables.index(var) if var in variables else 0,
             format_func=lambda x: VARIABLES_DISPLAY.get(x, x),
             key=f"variable_{i}"
         )
 
-    # Date range selection
+    # Seleccion de rango de fechas
     today = datetime.now().date()
     col1, col2 = st.columns(2)
     with col1:
@@ -234,110 +252,113 @@ def main():
     with col2:
         end_date = st.date_input("Fecha de fin", value=today, max_value=today, key="end_date")
 
-    # Optional decimation
+    # Diezmado opcional
     apply_decimation = st.checkbox("Aplicar diezmado", value=False, key="decimation")
     decimation_factor = 1
     if apply_decimation:
         decimation_factor = st.number_input("Factor de diezmado (entero > 1)", min_value=1, value=10, step=1, key="decimation_factor")
 
-    # Buttons
+    # Botones
     col_btn1, col2, col3 = st.columns([2, 1, 1])
     with col_btn1:
         st.markdown('<div class="main-button">', unsafe_allow_html=True)
         if st.button("Calcular Estadisticas"):
             if start_date > end_date:
                 st.error("La fecha de inicio no puede ser mayor que la fecha de fin.")
-                logger.error("Start date is greater than end date")
                 return
-            with st.spinner("Iniciando procesamiento de estadisticas..."):
-                logger.info("Calcular Estadisticas button pressed")
+            variables_str = ",".join(st.session_state.selected_variables)
+            if not check_data_availability(variables_str, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d')):
+                st.error(f"No hay datos disponibles para {variables_str} en el rango {start_date} a {end_date}. Verifica que existan archivos .txt en /home/pi/Desktop/Medidor/Rasp_Greco/YYYY-MM-DD/variable/.")
+                return
+            with st.spinner("Calculando estadisticas, por favor espera..."):
                 try:
-                    variables_str = ",".join(st.session_state.selected_variables)
+                    # Guardar configuracion
                     save_statistics_config(variables_str, start_date.strftime('%Y-%m-%d'), end_date.strftime('%Y-%m-%d'), decimation_factor)
-                    st.session_state.last_request_id = str(time.time())
-                    st.session_state.processing = True
-                    st.session_state.show_results = False
+                    # Ejecutar procesar_estadisticas.py directamente
                     cmd = [
                         "/home/pi/Desktop/Medidor/venv/bin/python3",
-                        "/home/pi/Desktop/Medidor/Dashboard/update_statistics_cron.py"
+                        "/home/pi/Desktop/Medidor/procesar_estadisticas.py",
+                        variables_str,
+                        start_date.strftime('%Y-%m-%d'),
+                        end_date.strftime('%Y-%m-%d'),
+                        str(decimation_factor)
                     ]
-                    logger.debug(f"Executing command in background: {' '.join(cmd)}")
-                    subprocess.Popen(
+                    logger.debug(f"Ejecutando comando: {' '.join(cmd)}")
+                    result = subprocess.run(
                         cmd,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                        text=True
+                        capture_output=True,
+                        text=True,
+                        timeout=86400  # 24 horas para procesamientos largos
                     )
-                    st.success("Procesamiento de estadisticas iniciado. Los resultados se mostraran cuando esten listos.")
+                    # Actualizar configuracion
+                    config = load_statistics_config()
+                    config['processing'] = False
+                    config['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    if result.returncode == 0:
+                        config['error'] = None
+                        st.success("Estadisticas calculadas exitosamente. Mostrando resultados...")
+                        logger.info(f"Procesamiento completado para {variables_str}. Salida: {result.stdout}")
+                    else:
+                        config['error'] = result.stderr.strip() or "Error desconocido. Revisa los logs en /home/pi/logs/procesar_estadisticas_error.log."
+                        st.error(f"Error al calcular estadisticas: {config['error']}")
+                        logger.error(f"Error en procesar_estadisticas.py: {config['error']}")
+                    save_statistics_config(config)
+                    # Forzar recarga de resultados
+                    st.experimental_rerun()
+                except subprocess.TimeoutExpired:
+                    config = load_statistics_config()
+                    config['processing'] = False
+                    config['error'] = "Procesamiento excedio el tiempo maximo (24 horas)."
+                    config['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    save_statistics_config(config)
+                    st.error("Error: Tiempo de procesamiento excedido (24 horas).")
+                    logger.error("Tiempo de espera excedido")
                 except Exception as e:
-                    st.error(f"Error al iniciar el procesamiento: {str(e)}")
-                    logger.error(f"Error initiating update_statistics_cron.py: {str(e)}", exc_info=True)
+                    config = load_statistics_config()
+                    config['processing'] = False
+                    config['error'] = f"Error: {str(e)}"
+                    config['timestamp'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    save_statistics_config(config)
+                    st.error(f"Error al calcular estadisticas: {e}")
+                    logger.error(f"Error al ejecutar procesar_estadisticas.py: {e}", exc_info=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
         st.markdown('<div class="main-button">', unsafe_allow_html=True)
-        if st.button("Seleccionar Otra Variable"):
+        if st.button("Agregar Variable"):
             if len(st.session_state.selected_variables) < len(variables):
                 st.session_state.selected_variables.append(variables[0])
-                st.session_state.show_results = False
-                st.session_state.processing = False
-                st.session_state.last_request_id = None
-                logger.info("Added new variable selection")
             else:
-                st.warning("No hay mas variables disponibles para seleccionar.")
+                st.warning("No hay mas variables disponibles.")
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col3:
         st.markdown('<div class="main-button">', unsafe_allow_html=True)
-        if len(st.session_state.selected_variables) > 1 and st.button("Remover Variable"):
+        if len(st.session_state.selected_variables) > 1 and st.button("Eliminar Variable"):
             st.session_state.selected_variables.pop()
-            st.session_state.show_results = False
-            st.session_state.processing = False
-            st.session_state.last_request_id = None
-            logger.info("Removed last variable")
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Check processing status and display results
-    config = load_statistics_config()
-    if config.get('processing', False):
-        st.session_state.processing = True
-    if config.get('error'):
-        st.error(config['error'])
-        logger.error(f"Stored error from config: {config['error']}")
-    if st.session_state.processing:
-        st.info("Procesando estadisticas... Por favor espera, los resultados se mostraran automaticamente.")
-        results = load_results_from_excel(st.session_state.last_request_id)
-        if results and config.get('request_id') == st.session_state.last_request_id:
-            st.session_state.show_results = True
-            st.session_state.processing = False
-            config['processing'] = False
-            config['error'] = None
-            with open(STATISTICS_CONFIG_FILE, 'wb') as f:
-                import pickle
-                pickle.dump(config, f)
-            os.chmod(STATISTICS_CONFIG_FILE, 0o664)
-            logger.info("Processing completed, results found")
-        else:
-            logger.debug("Waiting for results Excel file")
-
-    # Display results
-    if st.session_state.show_results:
-        results = load_results_from_excel(st.session_state.last_request_id)
-        if results:
-            for variable in st.session_state.selected_variables:
-                if variable in results:
-                    with st.container():
-                        st.markdown('<div class="results-container">', unsafe_allow_html=True)
-                        st.subheader(f"Estadisticas para {VARIABLES_DISPLAY.get(variable, variable)}")
-                        st.table(results[variable])
-                        st.markdown('</div>', unsafe_allow_html=True)
-                else:
-                    st.warning(f"No se encontraron resultados para {VARIABLES_DISPLAY.get(variable, variable)}.")
-        else:
-            st.warning(f"No se encontraron resultados en el archivo Excel para la solicitud actual. Verifica que se hayan generado datos en {STATISTICS_OUTPUT_DIR}/statistics_results_*.xlsx.")
+    # Mostrar resultados
+    results = load_results_from_excel()
+    if results:
+        config = load_statistics_config()
+        config_vars = config.get('variables', '').split(',')
+        for variable in st.session_state.selected_variables:
+            if variable in results:
+                with st.container():
+                    st.markdown('<div class="results-container">', unsafe_allow_html=True)
+                    st.subheader(f"Estadisticas para {VARIABLES_DISPLAY.get(variable, variable)}")
+                    st.table(results[variable])
+                    if variable not in config_vars:
+                        st.warning(f"Los resultados mostrados para {VARIABLES_DISPLAY.get(variable, variable)} son de un procesamiento anterior. Inicia un nuevo analisis para actualizar.")
+                    st.markdown('</div>', unsafe_allow_html=True)
+            else:
+                st.warning(f"No se encontraron resultados para {VARIABLES_DISPLAY.get(variable, variable)}. Asegura que los datos existan y el procesamiento se haya completado. Revisa los logs en /home/pi/logs/ para mas detalles.")
+    else:
+        st.info("No hay resultados disponibles. Selecciona variables y fechas, luego presiona 'Calcular Estadisticas'.")
 
 def run():
-    """Entry point for the Estadisticas page."""
+    """Punto de entrada para la pagina de Estadisticas."""
     main()
 
 if __name__ == "__main__":
