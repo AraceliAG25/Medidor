@@ -1,103 +1,100 @@
 import subprocess
 import json
 import time
+import os
 import smtplib
 from email.mime.text import MIMEText
 import logging
-import os
 
-# Configuracion de logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Configuracion
+NGROK_API = "http://localhost:4040/api/tunnels"
+NGROK_URL_FILE = '/home/pi/ngrok_url.txt'
+INVITADOS_FILE = "/home/pi/invitados.txt"
+CHECK_INTERVAL = 300  # 5 minutos
 
-# Configuracion del correo
-SENDER_ADDRESS = "solucionesenergiainnovacion@gmail.com"
-SENDER_PASSWORD = "psvx asnh vluc rglh"
+SENDER_ADDRESS = "aradilla3nueces@gmail.com"
+SENDER_PASSWORD = "uulf ovmx emdz icaa"
 SENDER_SERVER = 'smtp.gmail.com'
 SENDER_PORT = 587
-RECIPIENT_ADDRESS = "solucionesenergiainnovacion@gmail.com"
 
-# Archivo para almacenar la ultima URL
-URL_FILE = '/home/pi/ngrok_url.txt'
+# Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+# Funciones
 def get_ngrok_url():
-    """Obtiene la URL publica de Ngrok."""
     try:
-        # Esperar a que Ngrok este listo
-        time.sleep(5)
-        # Ejecutar curl para obtener los tuneles
         result = subprocess.run(
-            ["curl", "-s", "http://localhost:4040/api/tunnels"],
+            ["curl", "-s", NGROK_API],
             capture_output=True, text=True, check=True
         )
-        # Parsear el JSON y extraer la URL
         tunnels = json.loads(result.stdout)
-        url = tunnels["tunnels"][0]["public_url"]
-        logging.info(f"Ngrok URL obtenida: {url}")
-        return url
+        return tunnels["tunnels"][0]["public_url"]
     except Exception as e:
-        logging.error(f"Error al obtener la URL de Ngrok: {e}")
+        logging.error(f"Error obteniendo URL de ngrok: {e}")
         return None
 
-def send_email(url):
-    """Envia la URL de Ngrok por correo."""
-    try:
-        # Crear el mensaje
-        msg = MIMEText(f"La URL de Ngrok para acceder al Dashboard es: {url}")#------------------------------------------------
-        msg['From'] = SENDER_ADDRESS
-        msg['To'] = RECIPIENT_ADDRESS
-        msg['Subject'] = 'URL de Ngrok para el Dashboard'#-----------------------------------------------
+def read_last_url():
+    if os.path.exists(NGROK_URL_FILE):
+        with open(NGROK_URL_FILE, 'r') as f:
+            return f.read().strip()
+    return None
 
-        # Enviar el correo
+def save_url(url):
+    with open(NGROK_URL_FILE, 'w') as f:
+        f.write(url)
+
+def cargar_invitados():
+    if os.path.exists(INVITADOS_FILE):
+        with open(INVITADOS_FILE, 'r') as f:
+            return [line.strip() for line in f if line.strip()]
+    return []
+
+def enviar_correo(destinatario, asunto, cuerpo):
+    try:
+        msg = MIMEText(cuerpo)
+        msg['Subject'] = asunto
+        msg['From'] = SENDER_ADDRESS
+        msg['To'] = destinatario
+
         with smtplib.SMTP(SENDER_SERVER, SENDER_PORT) as server:
             server.starttls()
             server.login(SENDER_ADDRESS, SENDER_PASSWORD)
-            server.sendmail(SENDER_ADDRESS, RECIPIENT_ADDRESS, msg.as_string())
-        logging.info("Correo con la URL de Ngrok enviado con exito")
-    except Exception as e:
-        logging.error(f"Error al enviar el correo: {e}")
+            server.send_message(msg)
 
-def read_last_url():
-    """Lee la ultima URL almacenada en el archivo."""
-    try:
-        if os.path.exists(URL_FILE):
-            with open(URL_FILE, 'r') as f:
-                return f.read().strip()
-        return None
+        logging.info(f"Correo enviado a {destinatario}")
     except Exception as e:
-        logging.error(f"Error al leer la ultima URL: {e}")
-        return None
+        logging.error(f"Error enviando correo a {destinatario}: {e}")
 
-def save_url(url):
-    """Guarda la URL en el archivo."""
-    try:
-        with open(URL_FILE, 'w') as f:
-            f.write(url)
-    except Exception as e:
-        logging.error(f"Error al guardar la URL: {e}")
+def enviar_a_invitados(url):
+    invitados = cargar_invitados()
+    if not invitados:
+        logging.info("No hay invitados.")
+        return
+    asunto = "Nueva URL de acceso a la plataforma"
+    cuerpo = (
+        f"Hola,\n\n"
+        f"Tu nueva URL de acceso es:\n{url}\n\n"
+        f"Por favor guardala para futuros accesos.\n\n"
+        f"Equipo de Monitoreo Energetico"
+    )
+    for destinatario in invitados:
+        enviar_correo(destinatario, asunto, cuerpo)
 
 def main():
+    logging.info("Iniciando monitor automatico de ngrok...")
     while True:
-        # Obtener la URL actual de Ngrok
         current_url = get_ngrok_url()
-        
         if current_url:
-            # Leer la ultima URL conocida
             last_url = read_last_url()
-            
-            # Comparar URLs
             if current_url != last_url:
-                logging.info(f"URL cambiada de {last_url} a {current_url}")
-                # Guardar la nueva URL
+                logging.info(f"URL de ngrok cambio: {last_url} -> {current_url}")
                 save_url(current_url)
-                # Enviar correo con la nueva URL
-                send_email(current_url)
+                enviar_a_invitados(current_url)
             else:
-                logging.debug("La URL no ha cambiado")
+                logging.info("La URL no ha cambiado.")
         else:
-            logging.error("No se pudo obtener la URL de Ngrok")
-        
-        # Esperar antes de la proxima verificacion
-        time.sleep(300)  # Verificar cada 5 minutos
+            logging.warning("No se pudo obtener la URL de ngrok.")
+        time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
     main()

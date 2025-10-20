@@ -10,11 +10,16 @@ import time
 
 
 # -------------------------- Configuracion general --------------------------
+NGROK_API = "http://localhost:4040/api/tunnels"#---------------------
 NGROK_URL_FILE = '/home/pi/ngrok_url.txt'
 
 LOG_DIR = "/home/pi/logs"
 INFORMACION_CSV_FILE = "/home/pi/Desktop/Medidor/Dashboard/informacion.csv"
 INVITADOS_FILE = "/home/pi/invitados.txt"
+CHECK_INTERVAL = 300  # segundos (5 minutos) "-------------
+
+# ---------- Logging ----------
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')#--------------
 
 # Crear carpeta de logs si no existe
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -57,27 +62,45 @@ def enviar_correo(destinatario, asunto, cuerpo):
     except Exception as e:
         logging.error(f"Error al enviar correo a {destinatario}: {e}")
         raise
+def enviar_a_invitados(url):
+    invitados = cargar_invitados()
+    if not invitados:
+        logging.warning("No hay invitados a quienes enviar el correo.")
+        return
+
+    asunto = "Nueva URL de acceso a la plataforma"
+    cuerpo = (
+        f"Hola, espero que te encuentres bien.\n\n"
+        f"Ha cambiado la URL de acceso a la plataforma de monitoreo.\n\n"
+        f"Tu nueva URL es: {url}\n\n"
+        f"Por favor, guurdala para futuros accesos.\n\n"
+        "Equipo de Monitoreo Energético"
+    )
+
+    for destinatario in invitados:
+        enviar_correo(destinatario, asunto, cuerpo)
 def get_ngrok_url():
-    """Obtiene la URL publica de Ngrok y la guarda en un archivo."""
     try:
-        time.sleep(1)  # Pequeo delay
         result = subprocess.run(
-            ["curl", "-s", "http://localhost:4040/api/tunnels"],
+            ["curl", "-s", NGROK_API],
             capture_output=True, text=True, check=True
         )
         tunnels = json.loads(result.stdout)
         url = tunnels["tunnels"][0]["public_url"]
-        # Guardar URL para referencia
-        with open(NGROK_URL_FILE, 'w') as f:
-            f.write(url)
+        logging.info(f"Ngrok URL actual: {url}")
         return url
     except Exception as e:
-        logger.error(f"No se pudo obtener la URL de Ngrok: {e}")
-        # Leer la ltima URL conocida
-        if os.path.exists(NGROK_URL_FILE):
-            with open(NGROK_URL_FILE, 'r') as f:
-                return f.read().strip()
-        return "URL no disponible"
+        logging.error(f"Error al obtener URL de Ngrok: {e}")
+        return None
+def read_last_url():
+    if os.path.exists(NGROK_URL_FILE):
+        with open(NGROK_URL_FILE, 'r') as f:
+            return f.read().strip()
+    return None
+
+def save_url(url):
+    with open(NGROK_URL_FILE, 'w') as f:
+        f.write(url)
 
 def load_informacion():
     default_data = {
@@ -214,8 +237,6 @@ def run():
                 save_informacion(new_data)
                 st.session_state.show_config_informacion = False
                 st.rerun()
-                
-    
 
     st.markdown("---")
     st.header("Invitar personas a la plataforma")
@@ -274,10 +295,6 @@ def run():
                 borrar_invitados()
                 st.success("Lista de invitados eliminada.")
                 st.rerun()
-
-
-   
-
 # -------------------------- Ejecutar App --------------------------
 
 if __name__ == "__main__":
