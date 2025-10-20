@@ -300,6 +300,52 @@ def get_file_path(variable, date, hour):
     file_path = os.path.join(directory, f"{hour_str}.txt")
     return file_path
 
+# agregar cerca del inicio del archivo (antes de run/dashboard)
+def login():
+    """
+    Pantalla de inicio de sesion simple.
+    Permite:
+      - Iniciar sesion como admin (requiere usuario/clave)
+      - Entrar como invitado sin credenciales (boton)
+    """
+    
+        
+    # Inicializar estado de sesion si aun no existe
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+        st.session_state.role = None
+
+    # Si ya esta autenticado, mostrar pequeño banner y permitir cerrar sesión  BORRAR EN LA SEMANA 
+    if st.session_state.authenticated:
+        
+        # Si ya esta autenticado, no mostramos el formulario
+        return
+    st.title("Inicio de sesión")
+
+    # Mostrar formulario de login (admin) y botón de invitado
+    with st.form(key="login_form"):
+        user = st.text_input("Usuario")
+        password = st.text_input("Contraseña", type="password")
+        submit = st.form_submit_button("Iniciar sesión")
+    # Boton separado para entrar sin credenciales como invitado
+    if st.button("Entrar como invitado (sin credenciales)"):
+        st.session_state.authenticated = True
+        st.session_state.role = "invitado"
+        # recargar para que el dashboard se muestre inmediatamente
+        st.rerun()
+
+    # Procesar login admin (opcional)
+    if submit:
+        # Aqui colocas tu logica real de autenticacion. Ejemplo muy simple:
+        if user == "admin" and password == "admin123":
+            st.session_state.authenticated = True
+            st.session_state.role = "admin"
+            st.rerun()
+        else:
+            st.error("Usuario o contraseña incorrectos. Usa 'Entrar como invitado' si no tienes credenciales.")
+
+
+
 def initialize_default_heatmap():
     variable = "Potencia_aparente_total"
     fecha_final = (datetime.now().replace(minute=0, second=0, microsecond=0) - timedelta(hours=1)).date()
@@ -554,9 +600,29 @@ def generate_time_series_plot(data_buffer, variable, time_range):
         return None
 
 def dashboard():
+    # Ocultar la barra lateral por completo si es invitado
+    if st.session_state.get("role") == "invitado":
+        hide_sidebar_style = """
+            <style>
+                [data-testid="stSidebar"] {
+                    display: none;
+                }
+            </style>
+        """
+        st.markdown(hide_sidebar_style, unsafe_allow_html=True)
+
     st_autorefresh(interval=30000, key="refresh_realtime")  # Cambiado a 30 segundos
-    st.sidebar.title("Navegación")
-    selection = st.sidebar.radio("Ir a:", list(PAGES.keys()))
+    # dentro de dashboard(), en vez de mostrar siempre la sidebar:
+    if st.session_state.get("role") == "admin":
+        st.sidebar.title("Navegación")
+        selection = st.sidebar.radio("Ir a:", list(PAGES.keys()))
+    else:
+        # Invitado: forzar Ventana Principal y ocultar el menu
+        selection = "Ventana Principal"
+
+    
+
+    
     if selection != "Ventana Principal":
         try:
             page_module = __import__(PAGES[selection], fromlist=[""])
@@ -829,7 +895,13 @@ def dashboard():
             logger.warning("No se encontraron datos para la grafica historica por defecto")
 
 def run():
-    dashboard()
+    # Mostrar login primero
+    login()
+
+    # Si ya autenticado, cargar dashboard
+    if st.session_state.get("authenticated", False):
+        dashboard()
+
 
 if __name__ == "__main__":
     run()
