@@ -111,13 +111,15 @@ st.markdown("""
 <style>
 .stApp {
     background-color: #333333;
-    color: white;
+    color: gray;
     margin-top: 0px !important;
     padding-top: 0px !important;
 }
 
-.stSidebar > div {
-    background-color: #000000;
+/* Sidebar oscuro */
+section[data-testid="stSidebar"] {
+    background-color: #0E1117 !important;
+    border-right: 1px solid #555 !important;
 }
 button[data-testid="stSidebarCollapseButton"] {
     background-color: #FFC107 !important;
@@ -300,51 +302,63 @@ def get_file_path(variable, date, hour):
     file_path = os.path.join(directory, f"{hour_str}.txt")
     return file_path
 
-# agregar cerca del inicio del archivo (antes de run/dashboard)
 def login():
     """
-    Pantalla de inicio de sesion simple.
-    Permite:
-      - Iniciar sesion como admin (requiere usuario/clave)
-      - Entrar como invitado sin credenciales (boton)
+    Pantalla de inicio de sesion simple centrada sin CSS adicional.
     """
-    
-        
+
     # Inicializar estado de sesion si aun no existe
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
         st.session_state.role = None
 
-    # Si ya esta autenticado, mostrar pequeño banner y permitir cerrar sesión  BORRAR EN LA SEMANA 
+    # Si ya esta autenticado, salir
     if st.session_state.authenticated:
-        
-        # Si ya esta autenticado, no mostramos el formulario
         return
-    st.title("Inicio de sesión")
 
-    # Mostrar formulario de login (admin) y botón de invitado
-    with st.form(key="login_form"):
-        user = st.text_input("Usuario")
-        password = st.text_input("Contraseña", type="password")
-        submit = st.form_submit_button("Iniciar sesión")
-    # Boton separado para entrar sin credenciales como invitado
-    if st.button("Entrar como invitado (sin credenciales)"):
-        st.session_state.authenticated = True
-        st.session_state.role = "invitado"
-        # recargar para que el dashboard se muestre inmediatamente
-        st.rerun()
+    # --- Ocultar menu y sidebar mientras NO esta autenticado ---
+    if not st.session_state.authenticated:
+        st.markdown("""
+        <style>
+        [data-testid="stSidebar"],
+        [data-testid="stSidebarNav"],
+        button[data-testid="stSidebarCollapseButton"] {
+            display: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    # -------------------------------------------------------------
 
-    # Procesar login admin (opcional)
-    if submit:
-        # Aqui colocas tu logica real de autenticacion. Ejemplo muy simple:
-        if user == "admin" and password == "admin123":
+    # Menos espacio para subir el formulario un poco
+    st.markdown("###")  
+    st.markdown("###")  
+   
+
+    # Columnas para centrar horizontalmente, con columna central mas ancha
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        st.header("Inicio de sesión")
+
+        # Formulario un poco mas grande
+        with st.form(key="login_form"):
+            user = st.text_input("Usuario", key="user_input")
+            password = st.text_input("Contraseña", type="password", key="pass_input")
+            submit = st.form_submit_button("Iniciar sesión")
+
+        # Boton invitado
+        if st.button("Entrar como invitado (sin credenciales)"):
             st.session_state.authenticated = True
-            st.session_state.role = "admin"
+            st.session_state.role = "invitado"
             st.rerun()
-        else:
-            st.error("Usuario o contraseña incorrectos. Usa 'Entrar como invitado' si no tienes credenciales.")
 
-
+        # Procesar login
+        if submit:
+            if user == "admin" and password == "Energia$.":
+                st.session_state.authenticated = True
+                st.session_state.role = "admin"
+                st.rerun()
+            else:
+                st.error("Usuario o contrasena incorrectos. Usa 'Entrar como invitado' si no tienes credenciales.")
 
 def initialize_default_heatmap():
     variable = "Potencia_aparente_total"
